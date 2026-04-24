@@ -9,8 +9,19 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
+    
+    const existingUser = await this.prisma.user.findUnique({
+      where: { cpf: createUserDto.cpf },
+    });
+  
+    if (existingUser) {
+      throw new Error('CPF já cadastrado');
+    }
+  
+    // 🔐 Criptografa a senha
     const hashedPassword = await bcrypt.hash(createUserDto.senha, 10);
-
+  
+    // 💾 Cria o usuário
     const user = await this.prisma.user.create({
       data: {
         ...createUserDto,
@@ -22,14 +33,11 @@ export class UsersService {
         email: true,
         idade: true,
         ativo: true,
-      }, 
+      },
     });
-
-    
-
+  
     return user;
   }
-
   findAll() {
     return this.prisma.user.findMany({
       where: { ativo: true },
